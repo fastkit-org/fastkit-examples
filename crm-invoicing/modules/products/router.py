@@ -1,21 +1,24 @@
 from fastapi import APIRouter, Depends
-from app.infrastructure.auth import current_active_user
-from fastkit_core.http import success_response, paginated_response
-from fastkit_core.database import get_async_db
-from fastkit_core.i18n import _
 from sqlalchemy.orm import Session
 from starlette.responses import JSONResponse
-from app.schemas import ProductCreate, ProductUpdate
-from app.services import ProductService
+
+from fastkit_core.database import get_db
+from fastkit_core.http import success_response, paginated_response
+from app.infrastructure.auth import current_active_user
+from fastkit_core.i18n import _
+from .service import ProductService
+from .schemas import ProductCreate, ProductUpdate
 
 router = APIRouter(
-    prefix='/products',
-    tags=['Products'],
+    prefix="/products",
+    tags=["Product"],
     dependencies=[Depends(current_active_user)]
 )
 
-def get_service(session: Session = Depends(get_async_db)) -> ProductService:
+
+def get_service(session: Session = Depends(get_db)) -> ProductService:
     return ProductService(session)
+
 
 @router.get('', name='api.products.index')
 async def index(page: int = 1, per_page: int = 10, service: ProductService = Depends(get_service)) -> JSONResponse:

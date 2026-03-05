@@ -11,7 +11,7 @@ from .schemas import ClientCreate, ClientUpdate
 router = APIRouter(
     prefix="/clients",
     tags=["Client"],
-    dependencies=[current_active_user]
+    dependencies=[Depends(current_active_user)]
 )
 
 
