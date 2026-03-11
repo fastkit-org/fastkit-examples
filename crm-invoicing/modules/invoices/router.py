@@ -5,9 +5,9 @@ from fastkit_core.database import get_async_db
 from fastkit_core.i18n import _
 from sqlalchemy.orm import Session, selectinload
 from starlette.responses import JSONResponse
-from app.schemas import InvoiceCreate, InvoiceUpdate
-from app.services import InvoiceService
-from app.models import Invoice, InvoiceItem
+from modules.invoices.schemas import InvoiceCreate, InvoiceUpdate
+from modules.invoices.services import InvoiceService
+from modules.invoices.models import Invoice, InvoiceItem
 
 router = APIRouter(
     prefix='/invoices',
