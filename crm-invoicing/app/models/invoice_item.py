@@ -4,8 +4,8 @@ from fastkit_core.database import Base, IntIdMixin
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from app.models.invoice import Invoice
-    from app.models.product import Product
+    from modules.invoices.models import Invoice
+    from modules.products.models import Product
 
 class InvoiceItem(IntIdMixin, Base):
     __tablename__ = "invoice_items"
