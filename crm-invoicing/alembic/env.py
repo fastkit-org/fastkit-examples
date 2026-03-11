@@ -17,6 +17,7 @@ load_dotenv()
 from modules.clients.models import Client  # noqa
 from modules.products.models import Product  # noqa
 from modules.invoices.models import Invoice  # noqa
+from modules.invoice_items.models import InvoiceItem  # noqa
 target_metadata = Base.metadata
 
 

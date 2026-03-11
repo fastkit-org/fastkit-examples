@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from modules.clients.models import Client
-    from app.models.invoice_item import InvoiceItem
+    from modules.invoice_items.models import InvoiceItem
 
 class Invoice(IntIdMixin, BaseWithTimestamps, SoftDeleteMixin):
     __tablename__ = "invoices"

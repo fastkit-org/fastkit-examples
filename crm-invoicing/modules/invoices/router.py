@@ -7,7 +7,8 @@ from sqlalchemy.orm import Session, selectinload
 from starlette.responses import JSONResponse
 from modules.invoices.schemas import InvoiceCreate, InvoiceUpdate
 from modules.invoices.services import InvoiceService
-from modules.invoices.models import Invoice, InvoiceItem
+from modules.invoices.models import Invoice
+from modules.invoice_items.models import InvoiceItem
 
 router = APIRouter(
     prefix='/invoices',
