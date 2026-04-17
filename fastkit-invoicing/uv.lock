@@ -250,6 +250,7 @@ name = "fastkit-invoicing"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "alembic" },
     { name = "fastkit-cli" },
     { name = "fastkit-core", extra = ["postgresql-async", "redis"] },
     { name = "mailbridge" },
@@ -257,6 +258,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "alembic", specifier = ">=1.18.4" },
     { name = "fastkit-cli", specifier = ">=0.2.0" },
     { name = "fastkit-core", extras = ["postgresql-async", "redis"], specifier = ">=0.4.0" },
     { name = "mailbridge", specifier = ">=2.1.0" },
