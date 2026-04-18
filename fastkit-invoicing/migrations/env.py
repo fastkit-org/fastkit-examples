@@ -5,7 +5,7 @@ from sqlalchemy import pool
 import os
 from alembic import context
 import sys
-from fastkit_core.database import build_database_url
+from fastkit_core.database import build_database_url, Base
 from fastkit_core.config import  ConfigManager
 
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), '..')))
@@ -22,8 +22,8 @@ if config.config_file_name is not None:
 # add your model's MetaData object here
 # for 'autogenerate' support
 # from myapp import mymodel
-# target_metadata = mymodel.Base.metadata
-target_metadata = None
+from modules.clientses.models import Clients  # noqa
+target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
