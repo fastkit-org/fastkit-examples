@@ -1,32 +1,20 @@
-from sqlalchemy.orm import Session
-from fastkit_core.database import Repository
+from sqlalchemy.ext.asyncio import AsyncSession
+from fastkit_core.database import AsyncRepository
 
 from .models import Clients
 
 
-class ClientsRepository(Repository[Clients]):
+class ClientsRepository(AsyncRepository[Clients]):
     """
     Repository for Clients database operations.
 
-    Inherits all CRUD operations from Repository:
+    Inherits all CRUD operations from AsyncRepository:
         - create(data) / create_many(data_list)
         - get(id) / get_or_404(id) / get_all()
         - filter(**kwargs) / paginate(page, per_page)
         - update(id, data) / update_many(filters, data)
         - delete(id) / delete_many(filters)
-
-    Example:
-        repo = ClientsRepository(Clients, session)
-        instance = repo.create({'field': 'value'})
-        instances = repo.filter(field='value', _order_by='-created_at')
-        instances, meta = repo.paginate(page=1, per_page=20)
     """
 
-    def __init__(self, session: Session):
+    def __init__(self, session: AsyncSession):
         super().__init__(Clients, session)
-
-    # Define custom query methods here
-    # Example:
-    # def find_by_name(self, name: str) -> Clients | None:
-    #     results = self.filter(name=name)
-    #     return results[0] if results else None
