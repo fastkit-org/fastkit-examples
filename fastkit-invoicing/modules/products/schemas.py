@@ -26,19 +26,12 @@ class ProductUpdate(BaseUpdateSchema):
 
 
 class ProductResponse(BaseSchema):
-    """
-    Schema for Product API responses.
-
-    Include all fields that should be returned to the client.
-    Always include id and timestamps from BaseWithTimestamps.
-
-    model_config from_attributes=True is required for SQLAlchemy model mapping.
-    """
+    """Schema for product in responses."""
     id: int
-    # Add your fields here
-    # Example:
-    # name: str
-    # price: float
-    # description: str | None = None
-    created_at: Any = None
-    updated_at: Any = None
+    sku: str
+    slug: str
+    name: str
+    description: str
+    price: float
+    stock: int
+    is_active: bool
