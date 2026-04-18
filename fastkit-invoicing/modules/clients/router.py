@@ -27,7 +27,7 @@ async def index(
     service: ClientsService = Depends(get_service),
 ) -> JSONResponse:
     items, meta = await service.paginate(page=page, per_page=per_page)
-    return paginated_response(items=items, pagination=meta)
+    return paginated_response(items=[item.model_dump() for item in items], pagination=meta)
 
 
 @router.get("/{id}", response_model=ClientsResponse)
