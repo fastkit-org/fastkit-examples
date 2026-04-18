@@ -1,4 +1,3 @@
-from typing import Any
 from pydantic import Field, EmailStr
 from fastkit_core.validation import (
     BaseSchema,
