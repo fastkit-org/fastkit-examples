@@ -1,13 +1,13 @@
 from typing import Any
 from fastkit_core.services import BaseCrudService
-# from fastkit_core.services import SlugServiceMixin  # Uncomment if model uses SlugMixin
+from fastkit_core.services import SlugServiceMixin  # Uncomment if model uses SlugMixin
 
 from .models import Product
 from .repository import ProductRepository
 from .schemas import ProductCreate, ProductUpdate, ProductResponse
 
 
-class ProductService(BaseCrudService[
+class ProductService(SlugServiceMixin, BaseCrudService[
     Product,
     ProductCreate,
     ProductUpdate,
@@ -34,42 +34,22 @@ class ProductService(BaseCrudService[
         repository = ProductRepository(session)
         super().__init__(repository, response_schema=ProductResponse)
 
-    # -------------------------------------------------------------------------
-    # Validation hooks
-    # -------------------------------------------------------------------------
-
-    def validate_create(self, data: ProductCreate) -> None:
-        pass
-        # Example:
-        # if self.exists(name=data.name):
-        #     raise ValueError(_('validation.products.name_taken'))
-
-    def validate_update(self, id: Any, data: ProductUpdate) -> None:
-        pass
-
-    # -------------------------------------------------------------------------
-    # Lifecycle hooks
-    # -------------------------------------------------------------------------
-
-    def before_create(self, data: dict) -> dict:
-        return data
-        # Example:
-        # data['slug'] = self.generate_slug(data['name'])  # Requires SlugServiceMixin
-        # return data
-
-    def after_create(self, instance: Product) -> None:
-        pass
-        # Example:
-        # send_welcome_email(instance.email)
-
-    def before_update(self, id: Any, data: dict) -> dict:
+    async def before_create(self, data: dict) -> dict:
+        data['slug'] = await self.async_generate_slug(data['name'])
         return data
 
-    def after_update(self, instance: Product) -> None:
-        pass
+    def find_active(self) -> list[Product]:
+        """Get all active products."""
+        return self.filter(is_active=True, _order_by='name')
 
-    def before_delete(self, id: Any) -> None:
-        pass
+    def deactivate(self, product_id: int) -> Product:
+        """Deactivate product (soft disable without deleting)."""
+        return self.update(product_id, {'is_active': False})
 
-    def after_delete(self, id: Any) -> None:
-        pass
+    def activate(self, product_id: int) -> Product:
+        """Activate product."""
+        return self.update(product_id, {'is_active': True})
+
+    def find_by_sku(self, sku: str) -> Product | None:
+        """Find product by SKU."""
+        return self.filter_one(sku=sku)
