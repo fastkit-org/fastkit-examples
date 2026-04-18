@@ -1,11 +1,15 @@
-from typing import Any
-from pydantic import Field
+from typing import Any, Optional
+from pydantic import Field, computed_field, field_serializer
+from datetime import datetime
+from fastkit_core.i18n import _
 from app.models.enums import InvoicesStatus
 from fastkit_core.validation import (
     BaseSchema,
     BaseCreateSchema,
     BaseUpdateSchema
 )
+
+from modules.clients.schemas import ClientResponse
 
 
 class InvoiceCreate(BaseCreateSchema):
@@ -18,19 +22,19 @@ class InvoiceUpdate(BaseUpdateSchema):
 
 
 class InvoiceResponse(BaseSchema):
-    """
-    Schema for Invoice API responses.
-
-    Include all fields that should be returned to the client.
-    Always include id and timestamps from BaseWithTimestamps.
-
-    model_config from_attributes=True is required for SQLAlchemy model mapping.
-    """
     id: int
-    # Add your fields here
-    # Example:
-    # name: str
-    # price: float
-    # description: str | None = None
-    created_at: Any = None
-    updated_at: Any = None
+    invoice_number: str
+    client_id: int
+    status: InvoicesStatus
+    pdf_path: str | None
+    created_at: datetime | None = None
+
+    # Nested relationships (optional)
+    client: Optional[ClientResponse] = None
+
+
+    @field_serializer('created_at')
+    def serialize_datetime(self, dt: datetime | None, _info):
+        if dt is None:
+            return None
+        return dt.strftime("%m/%d/%Y")
