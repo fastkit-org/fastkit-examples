@@ -19,18 +19,8 @@ from fastkit_core.validation import (
 
 
 class InvoiceCreate(BaseCreateSchema):
-    """
-    Schema for creating a new Invoice.
-
-    Add fields that are required on creation.
-    Use validation rules from fastkit_core.validation for constraints.
-
-    Example:
-        name: str = min_length(3)
-        price: float = min_value(0.01)
-        description: str | None = None
-    """
-    pass  # Replace with actual fields
+    client_id: int = Field(gt=0, description="Client ID")
+    invoice_number: str
 
 
 class InvoiceUpdate(BaseUpdateSchema):
