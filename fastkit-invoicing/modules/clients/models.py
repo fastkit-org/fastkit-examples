@@ -1,18 +1,19 @@
 from sqlalchemy import String, Enum
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from typing import TYPE_CHECKING, List
 from fastkit_core.database import (
     BaseWithTimestamps,
     IntIdMixin,
-    # UUIDMixin,          # Uncomment to use UUID as primary key instead of IntIdMixin
-    SoftDeleteMixin,    # Uncomment to enable soft delete (deleted_at)
-    # SlugMixin,          # Uncomment to add slug field (slug)
-    # PublishableMixin,   # Uncomment to add published_at field
-    # TranslatableMixin,  # Uncomment for multi-language field support
+    SoftDeleteMixin,
 )
 from app.models.enums import Languages
 
+if TYPE_CHECKING:
+    from modules.invoices.models import Invoice
+
+
 class Clients(BaseWithTimestamps, IntIdMixin, SoftDeleteMixin):
-    __tablename__ = "clientses"
+    __tablename__ = "clients"
 
     name: Mapped[str] = mapped_column(String(255))
     description: Mapped[str | None] = mapped_column(String(255))
@@ -28,3 +29,5 @@ class Clients(BaseWithTimestamps, IntIdMixin, SoftDeleteMixin):
     city: Mapped[str | None] = mapped_column(String(100), nullable=True)
     country: Mapped[str | None] = mapped_column(String(100), nullable=True)
     postal_code: Mapped[str | None] = mapped_column(String(20), nullable=True)
+
+    invoices: Mapped[List["Invoice"]] = relationship(back_populates="client")
