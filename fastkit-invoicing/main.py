@@ -1,6 +1,6 @@
-def main():
-    print("Hello from fastkit-invoicing!")
+from fastapi import FastAPI
+from modules.clients.router import router as clients_router
 
+app = FastAPI()
 
-if __name__ == "__main__":
-    main()
+app.include_router(clients_router)
