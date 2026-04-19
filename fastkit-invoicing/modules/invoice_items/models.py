@@ -1,22 +1,20 @@
-from sqlalchemy.orm import Mapped, mapped_column
-from fastkit_core.database import (
-    BaseWithTimestamps,
-    IntIdMixin,
-    # UUIDMixin,          # Uncomment to use UUID as primary key instead of IntIdMixin
-    # SoftDeleteMixin,    # Uncomment to enable soft delete (deleted_at)
-    # SlugMixin,          # Uncomment to add slug field (slug)
-    # PublishableMixin,   # Uncomment to add published_at field
-    # TranslatableMixin,  # Uncomment for multi-language field support
-)
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import Float, ForeignKey
+from fastkit_core.database import Base, IntIdMixin
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from modules.invoices.models import Invoice
+    from modules.products.models import Product
 
 
-class InvoiceItem(BaseWithTimestamps, IntIdMixin):
+class InvoiceItem(Base, IntIdMixin):
     __tablename__ = "invoice_items"
 
-    # Define your columns here
-    # Example:
-    # name: Mapped[str] = mapped_column(nullable=False)
-    # description: Mapped[str | None] = mapped_column(nullable=True)
+    invoice_id: Mapped[int] = mapped_column(ForeignKey("invoices.id"))
+    product_id: Mapped[int] = mapped_column(ForeignKey("products.id"))
+    quantity: Mapped[int] = mapped_column(default=1)
+    unit_price: Mapped[float] = mapped_column(Float)
 
-    def __repr__(self) -> str:
-        return f"<InvoiceItem id={self.id}>"
+    invoice: Mapped["Invoice"] = relationship(back_populates="items")
+    product: Mapped["Product"] = relationship(back_populates="invoice_items")
