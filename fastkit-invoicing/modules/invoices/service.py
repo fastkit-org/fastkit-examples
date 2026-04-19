@@ -1,10 +1,17 @@
-from typing import Any
 from fastkit_core.services import AsyncBaseCrudService
-# from fastkit_core.services import SlugServiceMixin  # Uncomment if model uses SlugMixin
-
+from fastkit_core.database import AsyncRepository
 from .models import Invoice
 from .repository import InvoiceAsyncRepository
 from .schemas import InvoiceCreate, InvoiceUpdate, InvoiceResponse
+from typing import TYPE_CHECKING
+
+from jinja2 import Environment, FileSystemLoader
+from weasyprint import HTML
+from pathlib import Path
+from fastkit_core.i18n import _
+
+if TYPE_CHECKING:
+    from modules.invoice_items.models import InvoiceItem
 
 
 class InvoiceService(AsyncBaseCrudService[
@@ -13,77 +20,40 @@ class InvoiceService(AsyncBaseCrudService[
     InvoiceUpdate,
     InvoiceResponse
 ]):
-    """
-    Async service for Invoice business logic.
-
-    Inherits all async CRUD operations from AsyncBaseCrudService:
-        - await find(id) / await find_or_fail(id) / await get_all() / await filter(**kwargs)
-        - await paginate(page, per_page) / await exists(**kwargs) / await count(**kwargs)
-        - await create(data) / await create_many(data_list)
-        - await update(id, data) / await update_many(filters, data)
-        - await delete(id) / await delete_many(filters)
-
-    Lifecycle hooks available to override:
-        - async validate_create(data) / async validate_update(id, data)
-        - async before_create(data) / async after_create(instance)
-        - async before_update(id, data) / async after_update(instance)
-        - async before_delete(id) / async after_delete(id)
-    """
-
     def __init__(self, session):
-        repository = InvoiceAsyncRepository(session)
-        super().__init__(repository, response_schema=InvoiceResponse)
+        self.repository = InvoiceAsyncRepository(Invoice, session)
+        self.invoice_item_repository = AsyncRepository(InvoiceItem, session)
+        self.session = session
+        super().__init__(self.repository, response_schema=InvoiceResponse)
 
-    # -------------------------------------------------------------------------
-    # Validation hooks
-    # -------------------------------------------------------------------------
+    async def create_with_items(self, data: InvoiceCreate) -> InvoiceResponse:
+        data_dict = data.model_dump()
+        items_data = data_dict.pop('items', [])
 
-    async def validate_create(self, data: InvoiceCreate) -> None:
-        pass
-        # Example:
-        # if await self.exists(name=data.name):
-        #     raise ValueError(_('validation.invoices.name_taken'))
+        invoice = await self.repository.create(data=data_dict, commit=True)
 
-    async def validate_update(self, id: Any, data: InvoiceUpdate) -> None:
-        pass
+        for item_data in items_data:
+            item_data['invoice_id'] = invoice.id
+            await self.invoice_item_repository.create(data=item_data, commit=True)
 
-    # -------------------------------------------------------------------------
-    # Lifecycle hooks
-    # -------------------------------------------------------------------------
+        await self.update(invoice.id, {
+            'pdf_path': str(self.generate(invoice=invoice))
+        })
 
-    async def before_create(self, data: dict) -> dict:
-        return data
-        # Example:
-        # data['slug'] = await self.async_generate_slug(data['name'])  # Requires SlugServiceMixin
-        # return data
+        await self.session.refresh(invoice, attribute_names=['items'])
 
-    async def after_create(self, instance: Invoice) -> None:
-        pass
-        # Example:
-        # await send_welcome_email(instance.email)
+        return InvoiceResponse.model_validate(invoice)
 
-    async def before_update(self, id: Any, data: dict) -> dict:
-        return data
+    def generate(self, invoice: Invoice, templates_dir="templates", output_dir="storage/invoices") -> Path:
+        filename = f"invoice-{invoice.id}.pdf"
+        env = Environment(loader=FileSystemLoader(templates_dir))
+        output_dir = Path(output_dir)
+        env.globals['_'] = _
+        output_dir.mkdir(parents=True, exist_ok=True)
+        template = env.get_template("invoice.html")
+        html_content = template.render(invoice=invoice)
 
-    async def after_update(self, instance: Invoice) -> None:
-        pass
+        file_path = output_dir / filename
+        HTML(string=html_content).write_pdf(target=str(file_path))
 
-    async def before_delete(self, id: Any) -> None:
-        pass
-
-    async def after_delete(self, id: Any) -> None:
-        pass
-
-    # -------------------------------------------------------------------------
-    # Transaction management
-    # -------------------------------------------------------------------------
-
-    # Example of manual transaction control:
-    # async def transfer(self, from_id: int, to_id: int, amount: float) -> None:
-    #     try:
-    #         await self.update(from_id, data, commit=False)
-    #         await self.update(to_id, data, commit=False)
-    #         await self.commit()
-    #     except Exception:
-    #         await self.rollback()
-    #         raise
+        return file_path
