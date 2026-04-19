@@ -35,21 +35,23 @@ class ProductService(SlugServiceMixin, AsyncBaseCrudService[
         super().__init__(repository, response_schema=ProductResponse)
 
     async def before_create(self, data: dict) -> dict:
-        data['slug'] = await self.async_generate_slug(data['name'])
+        name = data['name']
+        slug_source = name.get('en') or next(iter(name.values()), '') if isinstance(name, dict) else str(name)
+        data['slug'] = await self.async_generate_slug(slug_source)
         return data
 
-    def find_active(self) -> list[Product]:
+    async def find_active(self) -> list[Product]:
         """Get all active products."""
-        return self.filter(is_active=True, _order_by='name')
+        return await self.filter(is_active=True, _order_by='name')
 
-    def deactivate(self, product_id: int) -> Product:
+    async def deactivate(self, product_id: int) -> Product:
         """Deactivate product (soft disable without deleting)."""
-        return self.update(product_id, {'is_active': False})
+        return await self.update(product_id, {'is_active': False})
 
-    def activate(self, product_id: int) -> Product:
+    async def activate(self, product_id: int) -> Product:
         """Activate product."""
-        return self.update(product_id, {'is_active': True})
+        return await self.update(product_id, {'is_active': True})
 
-    def find_by_sku(self, sku: str) -> Product | None:
+    async def find_by_sku(self, sku: str) -> Product | None:
         """Find product by SKU."""
-        return self.filter_one(sku=sku)
+        return await self.filter_one(sku=sku)

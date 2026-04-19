@@ -26,6 +26,8 @@ class InvoiceItemResponse(BaseSchema):
     product_slug: Optional[str] = None
     product_description: Optional[str] = None
 
+    model_config = {"from_attributes": True}
+
     @model_validator(mode='before')
     @classmethod
     def extract_product_data(cls, data):

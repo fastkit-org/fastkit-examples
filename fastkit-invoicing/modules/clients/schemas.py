@@ -36,10 +36,16 @@ class ClientsUpdate(BaseUpdateSchema):
 class ClientsResponse(BaseSchema):
     id: int
     name: str
-    description: str | None
-    email: str | None
-    phone: str | None
-    address: str | None
-    city: str | None
-    country: str | None
-    postal_code: str | None
+    description: str | None = None
+    email: str | None = None
+    phone: str | None = None
+    address: str | None = None
+    city: str | None = None
+    country: str | None = None
+    postal_code: str | None = None
+
+    model_config = {"from_attributes": True}
+
+
+# Alias za konzistentnost sa relacijama (Invoice koristi ClientResponse)
+ClientResponse = ClientsResponse

@@ -1,17 +1,13 @@
 from fastkit_core.services import AsyncBaseCrudService
-from fastkit_core.database import AsyncRepository
 from .models import Invoice
 from .repository import InvoiceAsyncRepository
 from .schemas import InvoiceCreate, InvoiceUpdate, InvoiceResponse
-from typing import TYPE_CHECKING
+from modules.invoice_items.repository import InvoiceItemRepository
 
 from jinja2 import Environment, FileSystemLoader
 from weasyprint import HTML
 from pathlib import Path
 from fastkit_core.i18n import _
-
-if TYPE_CHECKING:
-    from modules.invoice_items.models import InvoiceItem
 
 
 class InvoiceService(AsyncBaseCrudService[
@@ -21,10 +17,10 @@ class InvoiceService(AsyncBaseCrudService[
     InvoiceResponse
 ]):
     def __init__(self, session):
-        self.repository = InvoiceAsyncRepository(Invoice, session)
-        self.invoice_item_repository = AsyncRepository(InvoiceItem, session)
+        repository = InvoiceAsyncRepository(session)
+        self.invoice_item_repository = InvoiceItemRepository(session)
         self.session = session
-        super().__init__(self.repository, response_schema=InvoiceResponse)
+        super().__init__(repository, response_schema=InvoiceResponse)
 
     async def create_with_items(self, data: InvoiceCreate) -> InvoiceResponse:
         data_dict = data.model_dump()
