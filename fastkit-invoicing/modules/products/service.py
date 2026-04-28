@@ -1,10 +1,15 @@
 from typing import Any
 from fastkit_core.services import AsyncBaseCrudService
-from fastkit_core.services import SlugServiceMixin  # Uncomment if model uses SlugMixin
+from fastkit_core.services import SlugServiceMixin
+from fastkit_core.cache import cache
+from fastkit_core.cache.decorators import cached
 
 from .models import Product
 from .repository import ProductAsyncRepository
 from .schemas import ProductCreate, ProductUpdate, ProductResponse
+
+CACHE_PREFIX = "products"
+CACHE_TTL = 300  # 5 minutes
 
 
 class ProductService(SlugServiceMixin, AsyncBaseCrudService[
@@ -13,26 +18,60 @@ class ProductService(SlugServiceMixin, AsyncBaseCrudService[
     ProductUpdate,
     ProductResponse
 ]):
-    """
-    Async service for Product business logic.
-
-    Inherits all async CRUD operations from AsyncBaseCrudService:
-        - await find(id) / await find_or_fail(id) / await get_all() / await filter(**kwargs)
-        - await paginate(page, per_page) / await exists(**kwargs) / await count(**kwargs)
-        - await create(data) / await create_many(data_list)
-        - await update(id, data) / await update_many(filters, data)
-        - await delete(id) / await delete_many(filters)
-
-    Lifecycle hooks available to override:
-        - async validate_create(data) / async validate_update(id, data)
-        - async before_create(data) / async after_create(instance)
-        - async before_update(id, data) / async after_update(instance)
-        - async before_delete(id) / async after_delete(id)
-    """
-
     def __init__(self, session):
         repository = ProductAsyncRepository(session)
         super().__init__(repository, response_schema=ProductResponse)
+
+    # -------------------------------------------------------------------------
+    # Cache key helpers
+    # -------------------------------------------------------------------------
+
+    @staticmethod
+    def _page_cache_key(page: int, per_page: int) -> str:
+        return f"{CACHE_PREFIX}:page:{page}:per_page:{per_page}"
+
+    @staticmethod
+    def _item_cache_key(product_id: int) -> str:
+        return f"{CACHE_PREFIX}:item:{product_id}"
+
+    # -------------------------------------------------------------------------
+    # Cached reads
+    # -------------------------------------------------------------------------
+
+    @cached(
+        ttl=CACHE_TTL,
+        key=lambda self, page=1, per_page=10: ProductService._page_cache_key(page, per_page)
+    )
+    async def paginate(self, page: int = 1, per_page: int = 10):
+        return await super().paginate(page=page, per_page=per_page)
+
+    @cached(
+        ttl=CACHE_TTL,
+        key=lambda self, product_id: ProductService._item_cache_key(product_id)
+    )
+    async def find(self, product_id: int):
+        return await super().find(product_id)
+
+    # -------------------------------------------------------------------------
+    # Cache invalidation
+    # -------------------------------------------------------------------------
+
+    async def _invalidate_product_cache(self) -> None:
+        """Invalidate all product cache entries."""
+        await cache.invalidate(f"{CACHE_PREFIX}:*")
+
+    async def after_create(self, instance: Product) -> None:
+        await self._invalidate_product_cache()
+
+    async def after_update(self, instance: Product) -> None:
+        await self._invalidate_product_cache()
+
+    async def after_delete(self, id: Any) -> None:
+        await self._invalidate_product_cache()
+
+    # -------------------------------------------------------------------------
+    # Business logic
+    # -------------------------------------------------------------------------
 
     async def before_create(self, data: dict) -> dict:
         name = data['name']
